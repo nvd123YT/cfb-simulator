@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Football Simulator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            /* Dark Gray */
+            color: #F3F4F6;
+            /* Light Gray */
+        }
+
+        /* Custom scrollbar for play-by-play */
+        .play-by-play-feed::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .play-by-play-feed::-webkit-scrollbar-track {
+            background: #1F2937;
+            /* Gray 800 */
+        }
+
+        .play-by-play-feed::-webkit-scrollbar-thumb {
+            background: #4B5563;
+            /* Gray 600 */
+            border-radius: 4px;
+        }
+
+        .play-by-play-feed::-webkit-scrollbar-thumb:hover {
+            background: #6B7280;
+            /* Gray 500 */
+        }
+
+        /* Styled Dropdowns */
+        .team-select {
+            background-color: #374151;
+            /* Gray 700 */
+            border: 1px solid #4B5563;
+            /* Gray 600 */
+            color: #F3F4F6;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%239CA3AF' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='down' d='M19.5 8.25l-7.5 7.5-7.5-7.5' /%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25rem;
+            padding-right: 2.5rem;
+            /* Make space for arrow */
+        }
+
+        /* Custom Button Style */
+        .sim-button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background-image: linear-gradient(to right, #1D4ED8 0%, #3B82F6 50%, #1D4ED8 100%);
+            background-size: 200% auto;
+            border: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .sim-button:hover {
+            background-position: right center;
+            /* Change the direction of the transition */
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3), 0 4px 6px -2px rgba(59, 130, 246, 0.15);
+        }
+
+        .sim-button:active {
+            transform: translateY(1px);
+        }
+
+        /* Smaller button variant */
+        .sim-button-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        /* Red variant for reset */
+        .sim-button-red {
+            background-image: linear-gradient(to right, #B91C1C 0%, #EF4444 50%, #B91C1C 100%);
+        }
+
+        .sim-button-red:hover {
+            box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3), 0 4px 6px -2px rgba(239, 68, 68, 0.15);
+        }
+
+        /* Gray variant for disabled/paused */
+        .sim-button-gray {
+            background-image: linear-gradient(to right, #4B5563 0%, #6B7280 50%, #4B5563 100%);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .sim-button-gray:hover {
+            box-shadow: none;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+                College Football Simulator
+            </h1>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="mainContent">
+
+            <!-- Game Setup Screen (Default) -->
+            <div id="gameSetupScreen">
+                <div class="bg-gray-800 p-6 md:p-8 rounded-xl shadow-2xl max-w-3xl mx-auto">
+                    <h2 class="text-2xl font-bold text-center mb-6">Create Your Matchup</h2>
+
+                    <!-- Team Selection -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Away Team -->
+                        <div class="flex flex-col items-center">
+                            <label for="awayTeamSelect" class="text-lg font-semibold mb-2">Away Team</label>
+                            <select id="awayTeamSelect" class="team-select w-full"></select>
+                            <img id="awayLogo" src="https://placehold.co/100x100/1F2937/1F2937?text=Logo" alt="Away Team Logo" class="mt-4 h-24 w-24 object-contain">
+                        </div>
+
+                        <!-- Home Team -->
+                        <div class="flex flex-col items-center">
+                            <label for="homeTeamSelect" class="text-lg font-semibold mb-2">Home Team</label>
+                            <select id="homeTeamSelect" class="team-select w-full"></select>
+                            <img id="homeLogo" src="https://placehold.co/100x100/1F2937/1F2937?text=Logo" alt="Home Team Logo" class="mt-4 h-24 w-24 object-contain">
+                        </div>
+                    </div>
+
+                    <!-- Simulation Controls -->
+                    <div class="flex flex-col md:flex-row justify-center gap-4">
+                        <button id="runQuickSimBtn" class="sim-button">Run Quick Sim</button>
+                        <button id="startLiveGameBtn" class="sim-button">Start Live Game</button>
+                    </div>
+                </div>
+
+                <!-- Quick Sim Results Area -->
+                <div id="quickSimResults" class="mt-8 max-w-3xl mx-auto hidden">
+                    <h3 class="text-2xl font-bold text-center mb-4">Quick Sim Results</h3>
+                    <div id="quickScoreSummary" class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                        <!-- Results will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Game Screen (Hidden by default) -->
+            <div id="liveGameScreen" class="hidden">
+                <!-- Scoreboard and Controls -->
+                <div class="bg-gray-800 p-4 rounded-xl shadow-2xl mb-6">
+                    <!-- Main Scoreboard -->
+                    <div class="grid grid-cols-3 items-center text-center mb-4">
+                        <!-- Away Team -->
+                        <div class="flex items-center justify-end space-x-4">
+                            <span id="awayNameScoreboard" class="hidden md:inline text-xl lg:text-3xl font-bold uppercase">AWAY</span>
+                            <img id="awayLogoScoreboard" src="" alt="Away Logo" class="h-12 w-12 md:h-16 md:w-16 object-contain">
+                        </div>
+
+                        <!-- Score / Time -->
+                        <div class="flex flex-col items-center">
+                            <div class="flex items-center space-x-4">
+                                <span id="awayScoreScoreboard" class="text-3xl lg:text-5xl font-black">0</span>
+                                <span class="text-gray-400 text-2xl lg:text-4xl">:</span>
+                                <span id="homeScoreScoreboard" class="text-3xl lg:text-5xl font-black">0</span>
+                            </div>
+                            <div id="clockAndQuarter" class="text-xl lg:text-3xl font-bold text-blue-400 mt-2">
+                                <span id="gameClock">15:00</span> - <span id="gameQuarter">Q1</span>
+                            </div>
+                        </div>
+
+                        <!-- Home Team -->
+                        <div class="flex items-center justify-start space-x-4">
+                            <img id="homeLogoScoreboard" src="" alt="Home Logo" class="h-12 w-12 md:h-16 md:w-16 object-contain">
+                            <span id="homeNameScoreboard" class="hidden md:inline text-xl lg:text-3xl font-bold uppercase">HOME</span>
+                        </div>
+                    </div>
+                    <!-- Down & Distance -->
+                    <div id="downAndDistance" class="text-center text-lg lg:text-2xl font-semibold text-yellow-400 mb-4">
+                        1st & 10, Ball on 25
+                    </div>
+
+                    <!-- Live Game Controls -->
+                    <div class="flex flex-wrap justify-center items-center gap-2 md:gap-4">
+                        <button id="pauseResumeBtn" class="sim-button sim-button-sm">Pause</button>
+                        <button id="simToEndBtn" class="sim-button sim-button-sm">Sim to End</button>
+                        <button id="resetGameBtn" class="sim-button sim-button-sm sim-button-red">Reset Game</button>
+                        <div class="flex items-center space-x-2 text-sm">
+                            <span class="font-medium">Slow</span>
+                            <input type="range" id="gameSpeedSlider" min="200" max="3000" value="1500" class="w-24 md:w-32">
+                            <span class="font-medium">Fast</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Game Dashboard -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Play-by-Play -->
+                    <div class="lg:col-span-1 bg-gray-800 p-4 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Play-by-Play</h3>
+                        <div id="playByPlayFeed" class="play-by-play-feed h-96 overflow-y-auto space-y-2">
+                            <!-- Plays will be injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Box Score -->
+                    <div class="lg:col-span-2 bg-gray-800 p-4 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Box Score</h3>
+                        <div id="liveBoxScore">
+                            <div class="grid grid-cols-3 gap-4 text-center mb-4 pb-4 border-b border-gray-700">
+                                <div></div>
+                                <div id="awayAbbrBox" class="text-lg font-bold">AWAY</div>
+                                <div id="homeAbbrBox" class="text-lg font-bold">HOME</div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 text-center font-medium">
+                                <!-- Score -->
+                                <div class="text-left font-bold pl-4">Score</div>
+                                <div id="awayScoreBox" class="text-lg font-semibold">0</div>
+                                <div id="homeScoreBox" class="text-lg font-semibold">0</div>
+                                <!-- Total Yards -->
+                                <div class="text-left font-bold pl-4">Total Yards</div>
+                                <div id="awayTotalYardsBox">0</div>
+                                <div id="homeTotalYardsBox">0</div>
+                                <!-- Pass Yards -->
+                                <div class="text-left font-bold pl-4">Pass Yards</div>
+                                <div id="awayPassYardsBox">0</div>
+                                <div id="homePassYardsBox">0</div>
+                                <!-- Rush Yards -->
+                                <div class="text-left font-bold pl-4">Rush Yards</div>
+                                <div id="awayRushYardsBox">0</div>
+                                <div id="homeRushYardsBox">0</div>
+                                <!-- Turnovers -->
+                                <div class="text-left font-bold pl-4">Turnovers</div>
+                                <div id="awayTurnoversBox">0</div>
+                                <div id="homeTurnoversBox">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- TEAM DATA & SIMULATION LOGIC -->
+    <script type="module">
+        // FBS Teams Data (136 Teams)
+        // Ratings are OVR, OFF, DEF on a 1-99 scale
+        // Logos are from ESPN CDN
+        const TEAMS = [
+            { id: 0, name: "Air Force", abbr: "AF", ovr: 78, off: 75, def: 81, logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Air_Force_Falcons_logo.svg/2048px-Air_Force_Falcons_logo.svg.png" },
+            { id: 1, name: "Akron", abbr: "AKR", ovr: 48, off: 50, def: 46, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2006.png" },
+            { id: 2, name: "Alabama", abbr: "ALA", ovr: 96, off: 95, def: 97, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png" },
+            { id: 3, name: "Appalachian State", abbr: "APP", ovr: 80, off: 82, def: 78, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2026.png" },
+            { id: 4, name: "Arizona", abbr: "ARIZ", ovr: 87, off: 88, def: 86, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/12.png" },
+            { id: 5, name: "Arizona State", abbr: "ASU", ovr: 74, off: 72, def: 76, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/9.png" },
+            { id: 6, name: "Arkansas", abbr: "ARK", ovr: 79, off: 78, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/8.png" },
+            { id: 7, name: "Arkansas State", abbr: "ARST", ovr: 64, off: 66, def: 62, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2032.png" },
+            { id: 8, name: "Army", abbr: "ARMY", ovr: 77, off: 74, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/349.png" },
+            { id: 9, name: "Auburn", abbr: "AUB", ovr: 82, off: 81, def: 83, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2.png" },
+            { id: 10, name: "Ball State", abbr: "BALL", ovr: 58, off: 57, def: 59, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2050.png" },
+            { id: 11, name: "Baylor", abbr: "BAY", ovr: 76, off: 77, def: 75, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/239.png" },
+            { id: 12, name: "Boise State", abbr: "BSU", ovr: 86, off: 87, def: 85, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/68.png" },
+            { id: 13, name: "Boston College", abbr: "BC", ovr: 78, off: 79, def: 77, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/103.png" },
+            { id: 14, name: "Bowling Green", abbr: "BGSU", ovr: 65, off: 67, def: 63, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/189.png?v=2" },
+            { id: 15, name: "Buffalo", abbr: "BUFF", ovr: 55, off: 56, def: 54, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2084.png" },
+            { id: 16, name: "BYU", abbr: "BYU", ovr: 79, off: 78, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/252.png" },
+            { id: 17, name: "California", abbr: "CAL", ovr: 79, off: 80, def: 78, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/25.png" },
+            { id: 18, name: "Central Michigan", abbr: "CMU", ovr: 60, off: 61, def: 59, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2117.png" },
+            { id: 19, name: "Charlotte", abbr: "CHAR", ovr: 52, off: 51, def: 53, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2429.png?v=2" },
+            { id: 20, name: "Cincinnati", abbr: "CIN", ovr: 75, off: 76, def: 74, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2132.png" },
+            { id: 21, name: "Clemson", abbr: "CLEM", ovr: 89, off: 88, def: 90, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/228.png" },
+            { id: 22, name: "Coastal Carolina", abbr: "CCU", ovr: 76, off: 77, def: 75, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/324.png" },
+            { id: 23, name: "Colorado", abbr: "COL", ovr: 75, off: 77, def: 73, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/38.png" },
+            { id: 24, name: "Colorado State", abbr: "CSU", ovr: 70, off: 72, def: 68, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/36.png" },
+            { id: 25, name: "Delaware", abbr: "DEL", ovr: 50, off: 52, def: 48, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/48.png" },
+            { id: 26, name: "Duke", abbr: "DUKE", ovr: 78, off: 77, def: 79, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png" },
+            { id: 27, name: "East Carolina", abbr: "ECU", ovr: 62, off: 61, def: 63, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/151.png?v=3" },
+            { id: 28, name: "Eastern Michigan", abbr: "EMU", ovr: 56, off: 58, def: 54, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2199.png?v=3" },
+            { id: 29, name: "FIU", abbr: "FIU", ovr: 50, off: 51, def: 49, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2229.png" },
+            { id: 30, name: "Florida", abbr: "FLA", ovr: 80, off: 81, def: 79, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png" },
+            { id: 31, name: "Florida Atlantic", abbr: "FAU", ovr: 68, off: 67, def: 69, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2226.png" },
+            { id: 32, name: "Florida State", abbr: "FSU", ovr: 90, off: 91, def: 89, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/52.png" },
+            { id: 33, name: "Fresno State", abbr: "FRES", ovr: 78, off: 77, def: 79, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/278.png" },
+            { id: 34, name: "Georgia", abbr: "UGA", ovr: 98, off: 99, def: 97, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png" },
+            { id: 35, name: "Georgia Southern", abbr: "GASO", ovr: 66, off: 68, def: 64, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/290.png?v=2" },
+            { id: 36, name: "Georgia State", abbr: "GAST", ovr: 65, off: 64, def: 66, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2247.png" },
+            { id: 37, name: "Georgia Tech", abbr: "GT", ovr: 77, off: 79, def: 75, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/59.png" },
+            { id: 38, name: "Hawaii", abbr: "HAW", ovr: 59, off: 61, def: 57, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/62.png" },
+            { id: 39, name: "Houston", abbr: "HOU", ovr: 74, off: 73, def: 75, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png" },
+            { id: 40, name: "Illinois", abbr: "ILL", ovr: 76, off: 78, def: 74, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/356.png" },
+            { id: 41, name: "Indiana", abbr: "IND", ovr: 89, off: 88, def: 91, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/84.png" },
+            { id: 42, name: "Iowa", abbr: "IOWA", ovr: 82, off: 70, def: 94, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2294.png" },
+            { id: 43, name: "Iowa State", abbr: "ISU", ovr: 83, off: 82, def: 84, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png" },
+            { id: 44, name: "Jacksonville State", abbr: "JSU", ovr: 69, off: 68, def: 70, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/2/20/Jacksonville_State_Gamecocks_logo.svg/1200px-Jacksonville_State_Gamecocks_logo.svg.png" },
+            { id: 45, name: "James Madison", abbr: "JMU", ovr: 81, off: 80, def: 82, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/256.png" },
+            { id: 46, name: "Kansas", abbr: "KU", ovr: 84, off: 85, def: 83, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png" },
+            { id: 47, name: "Kansas State", abbr: "KSU", ovr: 85, off: 86, def: 84, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2306.png" },
+            { id: 48, name: "Kennesaw State", abbr: "KENN", ovr: 49, off: 48, def: 50, logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Kennesaw_State_Owls_logo.svg/1200px-Kennesaw_State_Owls_logo.svg.png" },
+            { id: 49, name: "Kent State", abbr: "KENT", ovr: 51, off: 53, def: 49, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2309.png?v=3" },
+            { id: 50, name: "Kentucky", abbr: "UK", ovr: 81, off: 80, def: 82, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/96.png" },
+            { id: 51, name: "Liberty", abbr: "LIB", ovr: 83, off: 84, def: 82, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2335.png" },
+            { id: 52, name: "Louisiana", abbr: "LA", ovr: 72, off: 71, def: 73, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/309.png?v=2" },
+            { id: 53, name: "Louisiana Tech", abbr: "LTECH", ovr: 63, off: 65, def: 61, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2348.png?v=2" },
+            { id: 54, name: "Louisiana-Monroe", abbr: "ULM", ovr: 54, off: 53, def: 55, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2433.png" },
+            { id: 55, name: "Louisville", abbr: "LOU", ovr: 83, off: 84, def: 82, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/97.png" },
+            { id: 56, name: "LSU", abbr: "LSU", ovr: 88, off: 91, def: 85, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png" },
+            { id: 57, name: "Marshall", abbr: "MAR", ovr: 67, off: 66, def: 68, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/276.png" },
+            { id: 58, name: "Maryland", abbr: "MD", ovr: 77, off: 76, def: 78, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/120.png" },
+            { id: 59, name: "Memphis", abbr: "MEM", ovr: 82, off: 84, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/235.png" },
+            { id: 60, name: "Miami (FL)", abbr: "MIA", ovr: 86, off: 87, def: 85, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png" },
+            { id: 61, name: "Miami (OH)", abbr: "MOH", ovr: 73, off: 71, def: 75, logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Miami_Redhawks_logo.svg/1200px-Miami_Redhawks_logo.svg.png" },
+            { id: 62, name: "Michigan", abbr: "MICH", ovr: 94, off: 93, def: 95, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png" },
+            { id: 63, name: "Michigan State", abbr: "MSU", ovr: 78, off: 77, def: 79, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/127.png" },
+            { id: 64, name: "Middle Tennessee", abbr: "MTSU", ovr: 61, off: 60, def: 62, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2393.png" },
+            { id: 65, name: "Minnesota", abbr: "MINN", ovr: 76, off: 75, def: 77, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/135.png" },
+            { id: 66, name: "Mississippi State", abbr: "MSST", ovr: 77, off: 78, def: 76, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/344.png" },
+            { id: 67, name: "Missouri", abbr: "MIZ", ovr: 90, off: 91, def: 89, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/142.png" },
+            { id: 68, name: "Missouri State", abbr: "MIZZST", ovr: 49, off: 50, def: 48, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2623.png?v=3" },
+            { id: 69, name: "Navy", abbr: "NAVY", ovr: 71, off: 70, def: 72, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2426.png" },
+            { id: 70, name: "NC State", abbr: "NCST", ovr: 84, off: 83, def: 85, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/152.png" },
+            { id: 71, name: "Nebraska", abbr: "NEB", ovr: 80, off: 78, def: 82, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png" },
+            { id: 72, name: "Nevada", abbr: "NEV", ovr: 66, off: 68, def: 64, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2440.png" },
+            { id: 73, name: "New Mexico", abbr: "UNM", ovr: 67, off: 68, def: 66, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/167.png" },
+            { id: 74, name: "New Mexico State", abbr: "NMSU", ovr: 62, off: 64, def: 60, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/166.png" },
+            { id: 75, name: "North Carolina", abbr: "UNC", ovr: 85, off: 87, def: 83, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/153.png" },
+            { id: 76, name: "North Texas", abbr: "UNT", ovr: 70, off: 72, def: 68, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/249.png" },
+            { id: 77, name: "Northern Illinois", abbr: "NIU", ovr: 63, off: 62, def: 64, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2459.png?v=2" },
+            { id: 78, name: "Northwestern", abbr: "NW", ovr: 74, off: 72, def: 76, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/77.png" },
+            { id: 79, name: "Notre Dame", abbr: "ND", ovr: 92, off: 91, def: 93, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/87.png" },
+            { id: 80, name: "Ohio", abbr: "OHIO", ovr: 72, off: 70, def: 74, logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Ohio_Bobcats_wordmark.svg/1200px-Ohio_Bobcats_wordmark.svg.png" },
+            { id: 81, name: "Ohio State", abbr: "OSU", ovr: 97, off: 96, def: 98, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png" },
+            { id: 82, name: "Oklahoma", abbr: "OKLA", ovr: 88, off: 89, def: 87, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/201.png" },
+            { id: 83, name: "Oklahoma State", abbr: "OKST", ovr: 86, off: 87, def: 85, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/197.png" },
+            { id: 84, name: "Old Dominion", abbr: "ODU", ovr: 60, off: 59, def: 61, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/295.png" },
+            { id: 85, name: "Ole Miss", abbr: "MISS", ovr: 91, off: 93, def: 89, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png?v=3" },
+            { id: 86, name: "Oregon", abbr: "ORE", ovr: 95, off: 96, def: 94, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png" },
+            { id: 87, name: "Oregon State", abbr: "ORST", ovr: 79, off: 78, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/204.png" },
+            { id: 88, name: "Penn State", abbr: "PSU", ovr: 93, off: 91, def: 95, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png" },
+            { id: 89, name: "Pitt", abbr: "PITT", ovr: 76, off: 75, def: 77, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/221.png" },
+            { id: 90, name: "Purdue", abbr: "PUR", ovr: 73, off: 74, def: 72, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2509.png" },
+            { id: 91, name: "Rice", abbr: "RICE", ovr: 64, off: 65, def: 63, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/242.png" },
+            { id: 92, name: "Rutgers", abbr: "RUTG", ovr: 77, off: 74, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/164.png" },
+            { id: 93, name: "Sam Houston", abbr: "SHSU", ovr: 59, off: 58, def: 60, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/d/de/SHSU_athletics_logo.svg/1200px-SHSU_athletics_logo.svg.png" },
+            { id: 94, name: "San Diego State", abbr: "SDSU", ovr: 70, off: 68, def: 72, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/21.png" },
+            { id: 95, name: "San Jose State", abbr: "SJSU", ovr: 68, off: 70, def: 66, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/23.png" },
+            { id: 96, name: "SMU", abbr: "SMU", ovr: 83, off: 85, def: 81, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2567.png" },
+            { id: 97, name: "South Alabama", abbr: "USA", ovr: 71, off: 70, def: 72, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/6.png?v=2" },
+            { id: 98, name: "South Carolina", abbr: "SC", ovr: 78, off: 79, def: 77, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png" },
+            { id: 99, name: "South Florida", abbr: "USF", ovr: 75, off: 77, def: 73, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/58.png" },
+            { id: 100, name: "Southern Miss", abbr: "USM", ovr: 61, off: 60, def: 62, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2572.png" },
+            { id: 101, name: "Stanford", abbr: "STAN", ovr: 75, off: 76, def: 74, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/24.png" },
+            { id: 102, name: "Syracuse", abbr: "SYR", ovr: 79, off: 80, def: 78, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/183.png" },
+            { id: 103, name: "TCU", abbr: "TCU", ovr: 81, off: 82, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2628.png" },
+            { id: 104, name: "Temple", abbr: "TEM", ovr: 53, off: 54, def: 52, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/218.png" },
+            { id: 105, name: "Tennessee", abbr: "TENN", ovr: 89, off: 90, def: 88, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png" },
+            { id: 106, name: "Texas", abbr: "TEX", ovr: 90, off: 89, def: 94, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png" },
+            { id: 107, name: "Texas A&M", abbr: "TAMU", ovr: 87, off: 86, def: 88, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/245.png" },
+            { id: 108, name: "Texas State", abbr: "TXST", ovr: 74, off: 75, def: 73, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/326.png" },
+            { id: 109, name: "Texas Tech", abbr: "TTU", ovr: 81, off: 82, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2641.png" },
+            { id: 110, name: "Toledo", abbr: "TOL", ovr: 77, off: 79, def: 75, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2649.png" },
+            { id: 111, name: "Troy", abbr: "TROY", ovr: 79, off: 78, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2653.png" },
+            { id: 112, name: "Tulane", abbr: "TUL", ovr: 76, off: 75, def: 77, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2655.png" },
+            { id: 113, name: "Tulsa", abbr: "TLSA", ovr: 60, off: 61, def: 59, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/202.png" },
+            { id: 114, name: "UAB", abbr: "UAB", ovr: 64, off: 65, def: 63, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/5.png" },
+            { id: 115, name: "UCF", abbr: "UCF", ovr: 80, off: 82, def: 78, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2116.png" },
+            { id: 116, name: "UCLA", abbr: "UCLA", ovr: 80, off: 79, def: 81, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png" },
+            { id: 117, name: "UConn", abbr: "UCONN", ovr: 69, off: 68, def: 70, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/41.png?v=2" },
+            { id: 118, name: "UMass", abbr: "UMASS", ovr: 47, off: 48, def: 46, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/113.png" },
+            { id: 119, name: "UNLV", abbr: "UNLV", ovr: 77, off: 78, def: 76, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2439.png?v=2" },
+            { id: 120, name: "USC", abbr: "USC", ovr: 84, off: 86, def: 82, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png" },
+            { id: 121, name: "Utah", abbr: "UTAH", ovr: 88, off: 87, def: 89, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/254.png" },
+            { id: 122, name: "Utah State", abbr: "USU", ovr: 75, off: 77, def: 73, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/328.png" },
+            { id: 123, name: "UTEP", abbr: "UTEP", ovr: 58, off: 57, def: 59, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2638.png" },
+            { id: 124, name: "UTSA", abbr: "UTSA", ovr: 73, off: 74, def: 72, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2636.png" },
+            { id: 125, name: "Vanderbilt", abbr: "VANDY", ovr: 66, off: 65, def: 67, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/238.png" },
+            { id: 126, name: "Virginia", abbr: "UVA", ovr: 72, off: 71, def: 73, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/258.png" },
+            { id: 127, name: "Virginia Tech", abbr: "VT", ovr: 83, off: 82, def: 84, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/259.png" },
+            { id: 128, name: "Wake Forest", abbr: "WAKE", ovr: 79, off: 78, def: 80, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/154.png" },
+            { id: 129, name: "Washington", abbr: "WASH", ovr: 78, off: 79, def: 77, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png" },
+            { id: 130, name: "Washington State", abbr: "WSU", ovr: 76, off: 77, def: 75, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/265.png" },
+            { id: 131, name: "West Virginia", abbr: "WVU", ovr: 79, off: 80, def: 78, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/277.png" },
+            { id: 132, name: "Western Kentucky", abbr: "WKU", ovr: 70, off: 72, def: 68, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/98.png" },
+            { id: 133, name: "Western Michigan", abbr: "WMU", ovr: 59, off: 60, def: 58, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2711.png" },
+            { id: 134, name: "Wisconsin", abbr: "WIS", ovr: 81, off: 80, def: 82, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/275.png" },
+            { id: 135, name: "Wyoming", abbr: "WYO", ovr: 68, off: 67, def: 69, logo: "https://a.espncdn.com/i/teamlogos/ncaa/500/2751.png" }
+        ];
+
+        // --- Global State ---
+        let liveGame = null;
+        let gameInterval = null;
+        let isPaused = false;
+        let simToEnd = false;
+        let gameSpeed = 1500; // Default delay in ms
+
+        // --- DOM Elements ---
+        const gameSetupScreen = document.getElementById('gameSetupScreen');
+        const liveGameScreen = document.getElementById('liveGameScreen');
+        const quickSimResults = document.getElementById('quickSimResults');
+        const quickScoreSummary = document.getElementById('quickScoreSummary');
+        const awayTeamSelect = document.getElementById('awayTeamSelect');
+        const homeTeamSelect = document.getElementById('homeTeamSelect');
+        const awayLogo = document.getElementById('awayLogo');
+        const homeLogo = document.getElementById('homeLogo');
+        const runQuickSimBtn = document.getElementById('runQuickSimBtn');
+        const startLiveGameBtn = document.getElementById('startLiveGameBtn');
+        const pauseResumeBtn = document.getElementById('pauseResumeBtn');
+        const simToEndBtn = document.getElementById('simToEndBtn');
+        const resetGameBtn = document.getElementById('resetGameBtn');
+        const gameSpeedSlider = document.getElementById('gameSpeedSlider');
+        const playByPlayFeed = document.getElementById('playByPlayFeed');
+
+        // --- Initialization ---
+        function init() {
+            populateSelectors();
+            updateLogos();
+
+            // Event Listeners
+            awayTeamSelect.addEventListener('change', updateLogos);
+            homeTeamSelect.addEventListener('change', updateLogos);
+            runQuickSimBtn.addEventListener('click', runQuickGame);
+            startLiveGameBtn.addEventListener('click', startLiveGame);
+            pauseResumeBtn.addEventListener('click', togglePause);
+            simToEndBtn.addEventListener('click', triggerSimToEnd);
+            resetGameBtn.addEventListener('click', resetGame);
+            gameSpeedSlider.addEventListener('input', (e) => {
+                // Invert the slider (fast to slow)
+                gameSpeed = 3200 - e.target.value;
+            });
+        }
+
+        function populateSelectors() {
+            // Sort teams alphabetically
+            const sortedTeams = [...TEAMS].sort((a, b) => a.name.localeCompare(b.name));
+
+            sortedTeams.forEach(team => {
+                const awayOption = document.createElement('option');
+                awayOption.value = team.id;
+                awayOption.textContent = team.name;
+                awayTeamSelect.appendChild(awayOption);
+
+                const homeOption = document.createElement('option');
+                homeOption.value = team.id;
+                homeOption.textContent = team.name;
+                homeTeamSelect.appendChild(homeOption);
+            });
+
+            // Set default different teams
+            awayTeamSelect.value = TEAMS.find(t => t.abbr === 'ALA').id;
+            homeTeamSelect.value = TEAMS.find(t => t.abbr === 'UGA').id;
+        }
+
+        function updateLogos() {
+            const awayTeam = TEAMS.find(t => t.id == awayTeamSelect.value);
+            const homeTeam = TEAMS.find(t => t.id == homeTeamSelect.value);
+            if (awayTeam) awayLogo.src = awayTeam.logo;
+            if (homeTeam) homeLogo.src = homeTeam.logo;
+        }
+
+        // --- Screen Management ---
+        function showLiveGameScreen() {
+            gameSetupScreen.classList.add('hidden');
+            quickSimResults.classList.add('hidden');
+            liveGameScreen.classList.remove('hidden');
+        }
+
+        function showSetupScreen() {
+            gameSetupScreen.classList.remove('hidden');
+            liveGameScreen.classList.add('hidden');
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+        }
+
+        // --- Quick Game Simulation ---
+        function runQuickGame() {
+            const awayTeam = { ...TEAMS.find(t => t.id == awayTeamSelect.value) };
+            const homeTeam = { ...TEAMS.find(t => t.id == homeTeamSelect.value) };
+
+            // Add home field advantage
+            homeTeam.ovr += 2;
+            homeTeam.off += 2;
+            homeTeam.def += 2;
+
+            let awayScore = 0;
+            let homeScore = 0;
+            let awayYards = 0;
+            let homeYards = 0;
+
+            const numDrives = 24; // 12 drives per team
+
+            for (let i = 0; i < numDrives; i++) {
+                // Alternate possessions
+                const team = (i % 2 === 0) ? awayTeam : homeTeam;
+                const defense = (i % 2 === 0) ? homeTeam : awayTeam;
+
+                // Simulate a drive
+                const { points, yards } = simulateQuickDrive(team, defense);
+
+                if (i % 2 === 0) {
+                    awayScore += points;
+                    awayYards += yards;
+                } else {
+                    homeScore += points;
+                    homeYards += yards;
+                }
+            }
+
+            // Overtime check
+            if (awayScore === homeScore) {
+                awayScore += 7; // Simple OT
+                homeScore += Math.random() > 0.5 ? 7 : 0;
+            }
+
+            // Display results
+            displayQuickResults(awayTeam, homeTeam, awayScore, homeScore, awayYards, homeYards);
+        }
+
+        function simulateQuickDrive(offense, defense) {
+            const ratingAdv = (offense.off - defense.def) / 15;
+            let driveYards = 0;
+            let points = 0;
+
+            // Base drive yards - Increased for more scoring
+            let baseDrive = Math.random() * 75 + ratingAdv * 3;
+
+            // Turnover check
+            const turnoverChance = 0.05 - (ratingAdv * 0.005);
+            if (Math.random() < turnoverChance) {
+                return { points: 0, yards: driveYards }; // Turnover, no points
+            }
+
+            // Generate drive yards
+            driveYards = Math.max(0, Math.min(75, Math.round(baseDrive + (Math.random() - 0.5) * 20)));
+
+            // Scoring logic - Tuned for more points
+            if (driveYards > 60) { // Touchdown
+                points = 7;
+            } else if (driveYards > 45) { // Field Goal
+                points = 3;
+            }
+
+            return { points, yards: driveYards };
+        }
+
+        function displayQuickResults(away, home, awayScore, homeScore, awayYards, homeYards) {
+            quickScoreSummary.innerHTML = `
+                <div class="flex items-center justify-around text-center mb-4">
+                    <div class="flex-1">
+                        <img src="${away.logo}" class="h-16 w-16 mx-auto mb-2" alt="${away.name}">
+                        <h4 class="text-xl font-bold">${away.name}</h4>
+                        <span class="text-4xl font-black">${awayScore}</span>
+                    </div>
+                    <span class="text-2xl text-gray-400">vs</span>
+                    <div class="flex-1">
+                        <img src="${home.logo}" class="h-16 w-16 mx-auto mb-2" alt="${home.name}">
+                        <h4 class="text-xl font-bold">${home.name}</h4>
+                        <span class="text-4xl font-black">${homeScore}</span>
+                    </div>
+                </div>
+                <div class="border-t border-gray-700 pt-4 text-center">
+                    <h5 class="text-lg font-semibold mb-2">Team Stats</h5>
+                    <div class="flex justify-around">
+                        <div>
+                            <span class="text-gray-400">Total Yards</span>
+                            <div class="text-lg font-medium">${Math.round(awayYards * 1.5)} - ${Math.round(homeYards * 1.5)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            quickSimResults.classList.remove('hidden');
+        }
+
+        // --- Live Game Simulation ---
+
+        function startLiveGame() {
+            const awayTeam = TEAMS.find(t => t.id == awayTeamSelect.value);
+            const homeTeam = TEAMS.find(t => t.id == homeTeamSelect.value);
+
+            // Apply home field advantage
+            const homeTeamWithAdv = { ...homeTeam, ovr: homeTeam.ovr + 2, off: homeTeam.off + 2, def: homeTeam.def + 2 };
+
+            liveGame = {
+                away: { ...awayTeam, score: 0, totalYards: 0, passYards: 0, rushYards: 0, turnovers: 0 },
+                home: { ...homeTeamWithAdv, score: 0, totalYards: 0, passYards: 0, rushYards: 0, turnovers: 0 },
+                possession: 'away', // TODO: Add coin toss
+                quarter: 1,
+                clock: 900, // 15 minutes in seconds
+                down: 1,
+                toGo: 10,
+                ballOn: 25, // Own 25-yard line
+                gameOver: false,
+                lastPlay: ""
+            };
+
+            // Reset UI
+            isPaused = false;
+            simToEnd = false;
+            pauseResumeBtn.textContent = 'Pause';
+            pauseResumeBtn.disabled = false;
+            simToEndBtn.disabled = false;
+            showLiveGameScreen();
+            clearSimOutput();
+            updateScoreboard();
+            updateLiveBoxScore(); // Show box score from start
+
+            // Start game loop
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, gameSpeed);
+        }
+
+        function gameLoop() {
+            if (liveGame.gameOver) {
+                endGame();
+                return;
+            }
+
+            if (isPaused) {
+                return; // Do nothing if paused
+            }
+
+            if (simToEnd) {
+                // If sim-to-end is triggered, loop rapidly
+                while (!liveGame.gameOver) {
+                    simulatePlay();
+                    if (liveGame.clock <= 0) {
+                        endOfQuarter();
+                    }
+                }
+                endGame(); // Call endGame once after the loop finishes
+            } else {
+                // Normal play
+                if (liveGame.clock <= 0) {
+                    endOfQuarter();
+                }
+
+                if (!liveGame.gameOver) {
+                    simulatePlay();
+                    updateScoreboard();
+                    updateLiveBoxScore();
+                } else {
+                    endGame();
+                }
+            }
+        }
+
+        function simulatePlay() {
+            if (liveGame.gameOver) return;
+
+            // Burn clock
+            // New clock burn: 20-40 seconds
+            const clockBurn = Math.floor(Math.random() * 21) + 20;
+            liveGame.clock -= clockBurn;
+
+            // Check for end of half/game on clock runout
+            if (liveGame.clock <= 0) {
+                liveGame.clock = 0;
+                // Don't end quarter here, let the main loop handle it
+                return;
+            }
+
+            const offense = liveGame.possession === 'away' ? liveGame.away : liveGame.home;
+            const defense = liveGame.possession === 'away' ? liveGame.home : liveGame.away;
+
+            // Check for 4th down decisions
+            if (liveGame.down === 4) {
+                if (liveGame.ballOn >= 65) { // In FG range (Opponent's 35)
+                    handleFieldGoalAttempt(offense, defense);
+                } else if (liveGame.ballOn < 40) { // Deep in own territory
+                    handlePunt(offense, defense);
+                } else { // "Go for it" territory
+                    runPlay(offense, defense);
+                }
+            } else {
+                runPlay(offense, defense);
+            }
+        }
+
+        function runPlay(offense, defense) {
+            const isPass = Math.random() > 0.425;
+            const ratingAdv = (offense.off - defense.def) / 10; // e.g., 85 off vs 75 def = +1.0
+
+            // Base gain
+            let gain;
+            let isComplete = true; // Flag for pass plays
+
+            // This is the "base" yardage adjustment
+            // Tuned for more yards
+            // --- START NEW "SPLIT-BONUS" LOGIC ---
+
+            if (isPass) {
+                // --- PASS LOGIC ---
+                // 1. Check for completion (Goal: 60% Comp / 40% Incomp)
+                if (Math.random() < 0.40 - (ratingAdv * 0.01)) {
+                    gain = 0; // Incomplete
+                    isComplete = false;
+                } else {
+                    // 2. Calculate base gain (Goal: 7.6 YPA -> 12.7 YPC)
+                    gain = Math.random() * 25.4; // New range: 0-25 yards
+                }
+
+                // 3. Apply the pass-specific bonus (using your 0.75 multiplier)
+                if (isComplete) {
+                    let passBonus = ratingAdv * 0.9 + (Math.random() * 3 - 1.5);
+                    gain += passBonus;
+                }
+            } else {
+                // --- RUN LOGIC ---
+                // 1. Calculate base gain (New 0-10 yard base, avg 5.0)
+                gain = (Math.random() * 10) + 0; 
+
+                // 2. Apply the new, WEAKER run-specific bonus
+                let rushBonus = ratingAdv * 0.4 + (Math.random() * 3 - 1.5); // Multiplier is 0.35
+                gain += rushBonus;
+            }
+
+            // --- END NEW "SPLIT-BONUS" LOGIC ---
+
+            // Big play chance
+            if (Math.random() < (0.06 + (ratingAdv * 0.005))) { // 7% base, higher for good O
+                gain += Math.random() * 25 + 15; // Extra 15-40 yards
+            }
+
+            // Tackle for loss chance
+            if (Math.random() < (0.04 - (ratingAdv * 0.004))) { // 7% base, lower for good O
+                gain = -Math.random() * 5; // -0 to -5 yards
+            }
+
+            // Turnover chance
+            const turnoverChance = Math.max(0.005, 0.025 - (ratingAdv * 0.005));
+            if (Math.random() < turnoverChance) {
+                handleTurnover(offense, defense);
+                return;
+            }
+
+            // Ensure gain is rounded
+            gain = Math.round(gain);
+
+            // Apply gain
+            liveGame.ballOn += gain;
+            liveGame.toGo -= gain;
+
+            // Update stats
+            if (isPass) {
+                if (isComplete) {
+                    offense.passYards += gain;
+                    liveGame.lastPlay = `${offense.abbr} pass complete for ${gain} yards.`;
+                } else {
+                    liveGame.lastPlay = `${offense.abbr} pass incomplete.`;
+                }
+            } else {
+                offense.rushYards += gain;
+                liveGame.lastPlay = `${offense.abbr} rush for ${gain} yards.`;
+            }
+
+            if (isComplete) { // Only add yards if pass was complete or it was a rush
+                offense.totalYards += gain;
+            }
+
+
+            // Check for Touchdown
+            if (liveGame.ballOn >= 100) {
+                handleTouchdown(offense, defense);
+                return;
+            }
+
+            // Check for First Down
+            if (liveGame.toGo <= 0) {
+                liveGame.down = 1;
+                liveGame.toGo = 10;
+                // Cap ballOn at opponent's 1-yard line (99)
+                liveGame.ballOn = Math.min(99, liveGame.ballOn);
+            } else {
+                liveGame.down++;
+            }
+
+            // Check for Turnover on Downs
+            if (liveGame.down > 4) {
+                handleTurnoverOnDowns(offense, defense);
+                return;
+            }
+
+            addPlayByPlay(liveGame.lastPlay);
+        }
+
+        function handleTouchdown(offense, defense) {
+            offense.score += 7; // Assuming PAT is good
+            liveGame.lastPlay = `${offense.abbr} scores a TOUCHDOWN!`;
+            addPlayByPlay(liveGame.lastPlay, 'score');
+            changePossession(defense); // Other team gets the ball
+        }
+
+        function handleFieldGoalAttempt(offense, defense) {
+            const distance = (100 - liveGame.ballOn) + 17;
+            // Red zone bonus
+            const ratingAdv = (offense.off - defense.def);
+            const makePct = Math.max(0.1, Math.min(0.99, 1 - (distance / 450) + (ratingAdv / 300)));
+
+            if (Math.random() < makePct) {
+                offense.score += 3;
+                liveGame.lastPlay = `${offense.abbr} kicks a ${distance}-yard Field Goal. It's GOOD!`;
+                addPlayByPlay(liveGame.lastPlay, 'score');
+                changePossession(defense); // Kickoff to other team
+            } else {
+                liveGame.lastPlay = `${offense.abbr} misses a ${distance}-yard Field Goal.`;
+                addPlayByPlay(liveGame.lastPlay, 'turnover');
+                changePossession(defense, true, true); // Turnover on downs (missed FG)
+            }
+        }
+
+        function handlePunt(offense, defense) {
+            const puntDistance = Math.floor(Math.random() * 20) + 35; // 35-55 yard punt
+            let newBallOn = 100 - (liveGame.ballOn + puntDistance);
+            // Touchback
+            if (newBallOn < 20) {
+                newBallOn = 20;
+            }
+            liveGame.lastPlay = `${offense.abbr} punts the ball ${puntDistance} yards.`;
+            addPlayByPlay(liveGame.lastPlay, 'event');
+            changePossession(defense, false, newBallOn);
+        }
+
+        function handleTurnover(offense, defense) {
+            offense.turnovers++;
+            // Check for defensive TD
+            if (Math.random() < 0.005) { // 0.5% chance
+                defense.score += 7;
+                liveGame.lastPlay = `TURNOVER! ${offense.abbr} fumbles (or INT) and ${defense.abbr} returns it for a TOUCHDOWN!`;
+                addPlayByPlay(liveGame.lastPlay, 'turnover');
+                changePossession(offense); // Offense kicks off to defense
+            } else {
+                liveGame.lastPlay = `TURNOVER! ${offense.abbr} turns the ball over!`;
+                addPlayByPlay(liveGame.lastPlay, 'turnover');
+                // Set new ball position (e.g., return of 0-15 yards)
+                const returnYards = Math.floor(Math.random() * 15);
+                // 100 - (current pos + return)
+                let newBallOn = 100 - (liveGame.ballOn - returnYards); // Fix: return moves ball *away* from endzone
+                newBallOn = Math.max(10, Math.min(90, newBallOn)); // Cap it
+                changePossession(defense, false, newBallOn);
+            }
+        }
+
+        function handleTurnoverOnDowns(offense, defense) {
+            liveGame.lastPlay = `${offense.abbr} failed to convert on 4th down. Turnover on downs.`;
+            addPlayByPlay(liveGame.lastPlay, 'turnover');
+            changePossession(defense, true); // Hand ball over at current spot
+        }
+
+        function changePossession(newOffense, turnoverOnDowns = false, newBallOn = null) {
+            liveGame.possession = (newOffense.abbr === liveGame.away.abbr) ? 'away' : 'home';
+            liveGame.down = 1;
+            liveGame.toGo = 10;
+
+            if (turnoverOnDowns) {
+                // Ball is 100 - current spot
+                liveGame.ballOn = 100 - liveGame.ballOn;
+            } else if (newBallOn !== null) {
+                // Used for punts or turnovers with returns
+                liveGame.ballOn = newBallOn;
+            } else {
+                // Standard kickoff (touchback)
+                liveGame.ballOn = 25;
+            }
+
+            // Ensure ballOn is reasonable
+            liveGame.ballOn = Math.max(1, Math.min(99, liveGame.ballOn));
+
+            liveGame.lastPlay = `${newOffense.abbr} takes over.`;
+            addPlayByPlay(liveGame.lastPlay, 'event');
+        }
+
+        function endOfQuarter() {
+            liveGame.quarter++;
+            addPlayByPlay(`End of Quarter ${liveGame.quarter - 1}.`, 'event');
+
+            if (liveGame.quarter > 4) {
+                if (liveGame.away.score === liveGame.home.score) {
+                    handleOvertime();
+                } else {
+                    liveGame.gameOver = true;
+                }
+            } else {
+                liveGame.clock = 900; // 15 minutes
+                // Swap possession (unless it was just a score)
+                // For simplicity, let's just log and continue
+            }
+        }
+
+        function handleOvertime() {
+            // Simplified OT: each team gets a shot from the 25
+            addPlayByPlay(`End of regulation. Heading to OVERTIME!`, 'score');
+            liveGame.quarter = "OT"; // Set quarter to OT
+            liveGame.clock = 0; // No clock in OT
+
+            // This is a simplified OT for sim-to-end
+            if (liveGame.away.score === liveGame.home.score) {
+                liveGame.away.score += 7;
+                liveGame.home.score += (Math.random() > 0.5 ? 7 : 3);
+            }
+            liveGame.gameOver = true;
+        }
+
+        function endGame() {
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            if (!liveGame.gameOver) { // Ensure state is set
+                liveGame.gameOver = true;
+            }
+            liveGame.clock = 0;
+            if (liveGame.quarter !== "OT") {
+                liveGame.quarter = "FINAL";
+            }
+
+            pauseResumeBtn.disabled = true;
+            simToEndBtn.disabled = true;
+
+            // Final update for UI
+            updateScoreboard();
+            updateLiveBoxScore();
+            addPlayByPlay(`--- GAME OVER ---`, 'score');
+        }
+
+        // --- UI Update Functions ---
+        function clearSimOutput() {
+            playByPlayFeed.innerHTML = '';
+            quickScoreSummary.innerHTML = '';
+            quickSimResults.classList.add('hidden');
+        }
+
+        function addPlayByPlay(text, type = 'play') {
+            if (simToEnd) return; // Don't flood the feed if simming to end
+
+            const p = document.createElement('p');
+            p.textContent = text;
+            switch (type) {
+                case 'score':
+                    p.className = 'font-semibold text-green-400';
+                    break;
+                case 'turnover':
+                    p.className = 'font-semibold text-red-400';
+                    break;
+                case 'event':
+                    p.className = 'italic text-gray-400';
+                    break;
+                default:
+                    p.className = 'text-gray-200';
+            }
+            playByPlayFeed.prepend(p); // Add new plays to the top
+        }
+
+        function updateScoreboard() {
+            if (!liveGame) return;
+
+            // Header Scoreboard
+            document.getElementById('awayNameScoreboard').textContent = liveGame.away.name;
+            document.getElementById('awayLogoScoreboard').src = liveGame.away.logo;
+            document.getElementById('awayScoreScoreboard').textContent = liveGame.away.score;
+
+            document.getElementById('homeNameScoreboard').textContent = liveGame.home.name;
+            document.getElementById('homeLogoScoreboard').src = liveGame.home.logo;
+            document.getElementById('homeScoreScoreboard').textContent = liveGame.home.score;
+
+            // Clock and Quarter
+            const minutes = Math.floor(liveGame.clock / 60);
+            const seconds = liveGame.clock % 60;
+            const clockText = (liveGame.quarter === "FINAL" || liveGame.quarter === "OT") ? "0:00" : `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('gameClock').textContent = clockText;
+            document.getElementById('gameQuarter').textContent = (liveGame.quarter === "FINAL" || liveGame.quarter === "OT") ? liveGame.quarter : `Q${liveGame.quarter}`;
+
+            // Down and Distance
+            if (liveGame.gameOver) {
+                document.getElementById('downAndDistance').textContent = "--- FINAL ---";
+            } else {
+                const ballOnYardLine = liveGame.ballOn <= 50 ? `Own ${liveGame.ballOn}` : `Opp ${100 - liveGame.ballOn}`;
+                const downStr = liveGame.down === 1 ? '1st' : liveGame.down === 2 ? '2nd' : liveGame.down === 3 ? '3rd' : '4th';
+                const toGoStr = liveGame.toGo > 0 && liveGame.ballOn + liveGame.toGo >= 100 ? "Goal" : liveGame.toGo;
+                document.getElementById('downAndDistance').textContent = `${downStr} & ${toGoStr}, Ball on ${ballOnYardLine}`;
+            }
+        }
+
+        function updateLiveBoxScore() {
+            if (!liveGame) return;
+
+            document.getElementById('awayAbbrBox').textContent = liveGame.away.abbr;
+            document.getElementById('homeAbbrBox').textContent = liveGame.home.abbr;
+
+            document.getElementById('awayScoreBox').textContent = liveGame.away.score;
+            document.getElementById('homeScoreBox').textContent = liveGame.home.score;
+
+            // Use the correct ID 'awayTotalYardsBox'
+            document.getElementById('awayTotalYardsBox').textContent = Math.round(liveGame.away.totalYards);
+            document.getElementById('homeTotalYardsBox').textContent = Math.round(liveGame.home.totalYards);
+
+            document.getElementById('awayPassYardsBox').textContent = Math.round(liveGame.away.passYards);
+            document.getElementById('homePassYardsBox').textContent = Math.round(liveGame.home.passYards);
+
+            document.getElementById('awayRushYardsBox').textContent = Math.round(liveGame.away.rushYards);
+            document.getElementById('homeRushYardsBox').textContent = Math.round(liveGame.home.rushYards);
+
+            document.getElementById('awayTurnoversBox').textContent = liveGame.away.turnovers;
+            document.getElementById('homeTurnoversBox').textContent = liveGame.home.turnovers;
+        }
+
+
+        // --- Control Handlers ---
+        function togglePause() {
+            isPaused = !isPaused;
+            if (isPaused) {
+                pauseResumeBtn.textContent = 'Resume';
+            } else {
+                pauseResumeBtn.textContent = 'Pause';
+                if (!gameInterval) { // Restart loop if it was stopped
+                    gameInterval = setInterval(gameLoop, gameSpeed);
+                }
+            }
+        }
+
+        function triggerSimToEnd() {
+            simToEnd = true;
+            isPaused = false; // Ensure game is not paused
+            pauseResumeBtn.disabled = true;
+            simToEndBtn.disabled = true;
+            addPlayByPlay('Simulating to end...', 'event');
+
+            // Restart game loop if it was paused
+            if (!gameInterval) {
+                gameInterval = setInterval(gameLoop, gameSpeed);
+            }
+        }
+
+        function resetGame() {
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            liveGame = null;
+            isPaused = false;
+            simToEnd = false;
+            showSetupScreen();
+        }
+
+        // --- Utility ---
+        // (Helpers if needed)
+
+        // --- Start the App ---
+        init();
+    </script>
+
+</body>
+
+</html>
